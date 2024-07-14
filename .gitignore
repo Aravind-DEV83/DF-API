@@ -3,3 +3,5 @@ spark-warehouse
 metastore_db
 
 derby.log
+
+Fire_Department_and_Emergency_Medical_Services.csv
