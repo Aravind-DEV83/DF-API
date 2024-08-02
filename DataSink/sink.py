@@ -32,7 +32,8 @@ if __name__ == "__main__":
                 save()
     '''
 
-    rawParquetDf.write. \
+    rawParquetDf.repartition(5). \
+                write. \
                 format("json"). \
                 mode("overwrite"). \
                 option("path", "avro/"). \

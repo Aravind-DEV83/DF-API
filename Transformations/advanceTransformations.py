@@ -40,6 +40,7 @@ if __name__ == "__main__":
     parsed_df.filter(date_format(parsed_df["InvoiceDate"], "yyyyMM") == 201012). \
                 withColumn("rank2", rank().over(window_spec)). \
                 withColumn("drnk", dense_rank().over(window_spec)). \
+                withColumn("row_num", row_number().over(window_spec)). \
                 orderBy(col("UnitPrice").desc()). \
                 filter("rank2 <=5"). \
                 show()
