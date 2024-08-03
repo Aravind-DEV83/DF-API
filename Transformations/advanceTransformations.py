@@ -14,11 +14,13 @@ if __name__ == "__main__":
                     format("csv"). \
                     option("header", "true"). \
                     option("inferSchema", "true"). \
+                    option("mode", "permissive"). \
                     load("data/invoices.csv")
 
     raw_df.show(1)
 
-    parsed_df = raw_df.withColumn("InvoiceDate", to_date(to_timestamp(raw_df["InvoiceDate"], "dd-MM-yyyy H.mm")))
+    parsed_df = raw_df. \
+                    withColumn("InvoiceDate", to_date(to_timestamp(raw_df["InvoiceDate"], "dd-MM-yyyy H.mm")))
 
 
     daily_revenue = parsed_df. \
@@ -28,16 +30,22 @@ if __name__ == "__main__":
                         ). \
                         orderBy(col("InvoiceDate"))
     
+    handleNulls_df = parsed_df.na.fill(value=0, subset=["CustomerID"]). \
+                                na.fill("None", ["Description"]). \
+                                na.drop("all")
+    
+    handleNulls_df.filter("CustomerID == 0").show()
+    
     daily_revenue.show()
     # Global Ranks - orderBy
     global_window_spec = Window.orderBy(col("UnitPrice").desc())
-    parsed_df.withColumn("rank1", rank().over(global_window_spec)). \
+    handleNulls_df.withColumn("rank1", rank().over(global_window_spec)). \
                 orderBy(col("UnitPrice").desc()). \
                 show()
 
     # Ranks with each partition or group - partitionBy and orderBy
     window_spec = Window.partitionBy("InvoiceDate").orderBy(col("UnitPrice").desc())
-    parsed_df.filter(date_format(parsed_df["InvoiceDate"], "yyyyMM") == 201012). \
+    handleNulls_df.filter(date_format(parsed_df["InvoiceDate"], "yyyyMM") == 201012). \
                 withColumn("rank2", rank().over(window_spec)). \
                 withColumn("drnk", dense_rank().over(window_spec)). \
                 withColumn("row_num", row_number().over(window_spec)). \
@@ -46,9 +54,10 @@ if __name__ == "__main__":
                 show()
     
     # Filter based on dense ranks per partition
-    parsed_df.filter("InvoiceDate BETWEEN '2011-01-01' AND '2011-03-31' "). \
+    handleNulls_df.filter("InvoiceDate BETWEEN '2011-01-01' AND '2011-03-31' "). \
                 withColumn("drank3", dense_rank().over(window_spec)). \
                 filter("drank3 <=5"). \
                 show()
     
+    handleNulls_df.printSchema()
 
